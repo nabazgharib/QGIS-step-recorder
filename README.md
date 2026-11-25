@@ -38,6 +38,13 @@ Press record, do your task normally, and the plugin writes numbered, human-reada
 
 Step text uses simple markup: `**bold**` for interface elements and `` `code` `` for values.
 
+## Screenshots
+
+<img width="621" height="453" alt="image" src="https://github.com/user-attachments/assets/a1bce9fd-f41f-4176-a826-f9db90a592ac" />
+<img width="637" height="433" alt="image" src="https://github.com/user-attachments/assets/4f0589dd-280c-4f5f-b643-f2984c3ed1d2" />
+<img width="1258" height="661" alt="image" src="https://github.com/user-attachments/assets/7735d48a-f616-4824-a88b-a3ce9125208e" />
+
+
 ## Troubleshooting
 
 If something is not recorded, open **View ▸ Panels ▸ Log Messages ▸ StepRecorder** - internal errors are written there. Please include that output when you report a problem.
