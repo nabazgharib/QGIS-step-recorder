@@ -9,12 +9,13 @@ from qgis.PyQt.QtWidgets import (
 )
 
 from .compat import associated_widgets, DISPLAY_ROLE, ECHO_NORMAL, FORM_LABEL_ROLE, TOOLTIP_ROLE
+from . import log
 from .i18n import T
 from .textutils import clean_label, clean_text, clean_title, pretty_name, shorten
 
 try:
     from qgis.PyQt.Qsci import QsciScintilla
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     QsciScintilla = None
 
 # widgets that are made of several child widgets - we record the outer one
@@ -110,7 +111,7 @@ def _label_from_layout(lay, idx):
             if it is not None and it.widget() is not None:
                 return _text_of(it.widget())
     except (RuntimeError, TypeError, ValueError):
-        pass
+        log.ignored("widgets._label_from_layout")
     return ""
 
 
@@ -125,6 +126,7 @@ def _label_for(w):
                     if t:
                         return t
             except RuntimeError:
+                log.ignored("widgets._label_for")
                 continue
     # 2. neighbour label in the parent's layout
     par = w.parentWidget()
@@ -302,6 +304,7 @@ def dialog_summary(dialog, lang="en", full_paths=False):
                 continue
             label = find_label(w) or T(lang, "no_label")
         except RuntimeError:
+            log.ignored("widgets.dialog_summary")
             continue
         key = (label, val)
         if key in seen:

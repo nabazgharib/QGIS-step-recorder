@@ -60,6 +60,7 @@ Run the tests (no QGIS needed):
 ```bash
 python3 tests/test_pure.py          # text, model and export logic
 python3 tests/test_import_stubs.py  # import / undefined-name smoke test
+python3 tests/test_security_patterns.py  # mirrors the Bandit checks
 ```
 
 (`test_pure.py` needs Pillow for its sample screenshots.)

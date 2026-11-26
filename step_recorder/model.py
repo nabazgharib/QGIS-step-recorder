@@ -7,6 +7,7 @@ import tempfile
 import time
 import uuid
 
+from . import log
 from .textutils import strip_markup
 
 ROLE_ACTION = "action"   # something the reader must do  (numbered)
@@ -89,7 +90,7 @@ class Session(object):
             try:
                 fn(event, step)
             except Exception:  # a broken view must never break recording
-                pass
+                log.warn("model._fire")
 
     # ---- editing ---------------------------------------------------
     def new_image_path(self):
@@ -131,7 +132,7 @@ class Session(object):
             if step.image and os.path.dirname(os.path.abspath(step.image)) == os.path.abspath(self.base_dir):
                 os.remove(step.image)
         except OSError:
-            pass
+            log.ignored("model._delete_image")
 
     def last(self):
         return self.steps[-1] if self.steps else None

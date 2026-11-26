@@ -2,7 +2,6 @@
 """The recording engine: watches Qt events + QGIS signals and writes Steps."""
 import functools
 import time
-import traceback
 
 from qgis.PyQt.QtCore import QObject, QPoint, QRect, QTimer
 from qgis.PyQt.QtGui import QKeySequence
@@ -16,6 +15,7 @@ from qgis.PyQt.QtWidgets import (
 from qgis.core import Qgis, QgsApplication, QgsProject, QgsVectorLayer
 
 from . import capture
+from . import log
 from .compat import (
     BTN_ACCEPT_ROLE, BTN_APPLY_ROLE, associated_widgets, QAction, SEQ_EXACT, TB_DELAYED_POPUP, EV_DBLCLICK, EV_FOCUSIN, EV_FOCUSOUT, EV_KEY,
     EV_PRESS, EV_RELEASE, EV_SHOW, EV_WHEEL, KEY_ENTER, KEY_RETURN, LEFT, MOD_ALT,
@@ -28,7 +28,7 @@ from . import widgets as W
 
 try:
     from qgis.gui import QgsMapCanvas
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     QgsMapCanvas = None
 
 _RUN_NAMES = ("run", "ok", "apply")
@@ -60,7 +60,6 @@ class Recorder(QObject):
         self._in_proc = False
         self._last_text = None
         self._hooked_menus = []
-        self._last_err = None
 
     # ================================================================ control
     def start(self):
@@ -78,7 +77,7 @@ class Recorder(QObject):
         try:
             QApplication.instance().removeEventFilter(self)
         except RuntimeError:
-            pass
+            log.ignored("recorder.stop")
         self._disconnect_qgis()
         self._unhook_menus()
 
@@ -136,24 +135,8 @@ class Recorder(QObject):
             elif et == EV_FOCUSOUT:
                 self._on_focus_out(obj)
         except Exception:  # never let the recorder break QGIS
-            self._log_error()
+            log.warn("recorder.eventFilter")
         return False
-
-    def _log_error(self):
-        """Write the traceback to QGIS's log panel (View > Panels > Log Messages)."""
-        try:
-            from qgis.core import QgsMessageLog
-            tb = traceback.format_exc()
-            if tb == self._last_err:
-                return
-            self._last_err = tb
-            try:
-                level = Qgis.MessageLevel.Warning
-            except AttributeError:
-                level = Qgis.Warning
-            QgsMessageLog.logMessage(tb, "StepRecorder", level)
-        except Exception:
-            pass
 
     # ================================================================ presses
     def _on_press(self, obj, ev):
@@ -252,7 +235,7 @@ class Recorder(QObject):
             try:
                 self._record_menu_action(act, None, from_mouse=False)
             except Exception:
-                self._log_error()
+                log.warn("recorder._on_menu_triggered")
 
     # ---- opening of menus / drop-down lists ----------------------------
     def _hook_menu(self, menu):
@@ -270,7 +253,7 @@ class Recorder(QObject):
             try:
                 self._hook_menu(m)
             except RuntimeError:
-                pass
+                log.ignored("recorder._hook_all_menus")
 
     def _unhook_menus(self):
         for menu, slot in self._hooked_menus:
@@ -279,7 +262,7 @@ class Recorder(QObject):
                 menu.triggered.disconnect(self._on_menu_triggered)
                 menu.setProperty("sr_hooked", False)
             except (RuntimeError, TypeError):
-                pass
+                log.ignored("recorder._unhook_menus")
         self._hooked_menus = []
 
     def _on_menu_show(self, menu):
@@ -309,7 +292,7 @@ class Recorder(QObject):
                         if getter() is menu:
                             return ("button", p, None)
                     except RuntimeError:
-                        pass
+                        log.ignored("recorder._menu_owner")
                 p = p.parentWidget()
             if press[2] == RIGHT:
                 return ("context", None, None)
@@ -322,7 +305,7 @@ class Recorder(QObject):
             info = self._menu_owner(menu)
             QTimer.singleShot(120, functools.partial(self._record_menu_open, menu, info))
         except RuntimeError:
-            pass
+            log.ignored("recorder._menu_about_to_show")
 
     def _record_menu_open(self, menu, info):
         if not self.recording:
@@ -380,7 +363,7 @@ class Recorder(QObject):
                 return
             self._add(text, role, step_kind, image)
         except RuntimeError:
-            pass
+            log.ignored("recorder._record_menu_open")
 
     # -------------------------------------------------------------- buttons
     def _on_button(self, b):
@@ -449,7 +432,7 @@ class Recorder(QObject):
                 if role in (BTN_ACCEPT_ROLE, BTN_APPLY_ROLE):
                     return True
             except (RuntimeError, TypeError):
-                pass
+                log.ignored("recorder._is_run_button")
         return name.lower().rstrip(".… ") in _RUN_NAMES
 
     def _processing_command(self, dialog):
@@ -658,7 +641,7 @@ class Recorder(QObject):
         if new is None:
             if isinstance(t, QLineEdit) and old is not None:      # a password field
                 label = W.find_label(t) or T(self._lang(), "no_label")
-                self._add(self._action_text(t, "text_secret", label=label), ROLE_ACTION, "field")
+                self._add(self._action_text(t, "text_masked", label=label), ROLE_ACTION, "field")
             return
         if new == old or new == "":
             return
@@ -684,7 +667,7 @@ class Recorder(QObject):
             txt = self._action_text(combo, "combo", label=label, value=val)
             self._add(txt, ROLE_ACTION, "field", self._shot(combo, capture.global_rect(combo)))
         except RuntimeError:
-            pass
+            log.ignored("recorder._on_combo")
 
     # ------------------------------------------------------- dialogs opening
     def _on_show(self, obj):
@@ -725,7 +708,7 @@ class Recorder(QObject):
             img = self._shot(dlg, None) if self.opt.shots_dialogs else ""
             self._add(text, ROLE_RESULT, kind, img)
         except RuntimeError:
-            pass
+            log.ignored("recorder._late_dialog")
 
     # ======================================================== QGIS signal hooks
     def _link(self, signal, slot):
@@ -733,7 +716,7 @@ class Recorder(QObject):
             signal.connect(slot)
             self._conns.append((signal, slot))
         except Exception:
-            pass
+            log.warn("recorder._link")
 
     def _connect_qgis(self):
         proj = QgsProject.instance()
@@ -743,7 +726,7 @@ class Recorder(QObject):
         try:
             self._link(proj.crsChanged, self._on_crs)
         except AttributeError:
-            pass
+            log.ignored("recorder._connect_qgis")
         for sig in ("newProjectCreated", "projectRead"):
             s = getattr(self.iface, sig, None)
             if s is not None:
@@ -751,7 +734,7 @@ class Recorder(QObject):
         try:
             self._link(self.iface.messageBar().widgetAdded, self._on_msgbar)
         except Exception:
-            pass
+            log.warn("recorder._connect_qgis")
         for layer in proj.mapLayers().values():
             self._hook_layer(layer)
         self._patch_processing()
@@ -761,7 +744,7 @@ class Recorder(QObject):
             try:
                 sig.disconnect(slot)
             except Exception:
-                pass
+                log.warn("recorder._disconnect_qgis")
         self._conns = []
         self._hooked_layers = set()
         for t in self._sel_timers.values():
@@ -844,7 +827,7 @@ class Recorder(QObject):
             lvl = T(lang, "lvl_" + _level_name(item.level()))
             self._result(T(lang, "msgbar", level=lvl, text=shorten(text, 220)), "message")
         except Exception:
-            pass
+            log.warn("recorder._on_msgbar")
 
     def _on_saved(self, *a):
         where = ""
@@ -890,7 +873,7 @@ class Recorder(QObject):
                 if rec.recording and not rec._in_proc:
                     rec._record_python_run(algOrName, parameters)
             except Exception:
-                pass
+                log.warn("recorder.run")
             return res
         processing.run = run
 
@@ -901,7 +884,7 @@ class Recorder(QObject):
             import processing
             processing.run = self._orig_proc_run
         except Exception:
-            pass
+            log.warn("recorder._unpatch_processing")
         self._orig_proc_run = None
 
     def _record_python_run(self, alg_or_name, params):

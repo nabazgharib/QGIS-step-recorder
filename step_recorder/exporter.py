@@ -10,6 +10,7 @@ import os
 import re
 import shutil
 
+from . import log
 from .i18n import T, is_rtl
 from .model import ROLE_ACTION, ROLE_NOTE, ROLE_RESULT
 from .textutils import strip_markup
@@ -89,12 +90,19 @@ def _meta_line(session):
     if session.author:
         bits.append(session.author)
     bits.append(datetime.date.today().isoformat())
+    version = _qgis_version()
+    if version:
+        bits.append("QGIS %s" % version)
+    return " · ".join(bits)
+
+
+def _qgis_version():
+    """QGIS version string, or '' when exporting outside QGIS (unit tests)."""
     try:
         from qgis.core import Qgis
-        bits.append("QGIS %s" % Qgis.QGIS_VERSION.split("-")[0])
-    except Exception:
-        pass
-    return " · ".join(bits)
+    except ImportError:
+        return ""
+    return str(Qgis.QGIS_VERSION).split("-")[0]
 
 
 def _title(session):
@@ -227,7 +235,8 @@ def build_html(session, images=None, mode="web", embed=False, include_commands=T
             try:
                 from pathlib import Path
                 src = Path(os.path.abspath(ref)).as_uri()
-            except Exception:
+            except ValueError:
+                log.ignored("exporter.build_html: path to URI")
                 src = ref
         width = ""
         if mode == "qt":

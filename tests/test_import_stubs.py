@@ -31,7 +31,7 @@ for n in ("qgis", "qgis.PyQt", "qgis.PyQt.QtCore", "qgis.PyQt.QtGui", "qgis.PyQt
 
 pkg = types.ModuleType("step_recorder"); pkg.__path__ = [PKG]; sys.modules["step_recorder"] = pkg
 import importlib
-for mod in ("i18n", "textutils", "model", "options", "exporter", "compat", "widgets",
+for mod in ("log", "i18n", "textutils", "model", "options", "exporter", "compat", "widgets",
             "capture", "recorder", "ui", "plugin"):
     importlib.import_module("step_recorder." + mod)
     print("import ok:", mod)
