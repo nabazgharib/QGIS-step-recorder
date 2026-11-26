@@ -60,5 +60,26 @@ class SecurityPatterns(unittest.TestCase):
                                      "%s:%d" % (name, n.lineno))
 
 
+class Qt6Enums(unittest.TestCase):
+    """The plugin-repository Qt6 checker rejects unscoped enums (Qt.Vertical,
+    QDialogButtonBox.Ok, m.exec_()...). Keep all such lookups inside compat.py."""
+    UNSCOPED = re.compile(
+        r"\bQt\.(Vertical|Horizontal|LeftToRight|RightToLeft|Checked|Unchecked|AlignCenter"
+        r"|LeftButton|RightButton|NoModifier|Key_\w+)\b"
+        r"|\bQDialogButtonBox\.(Ok|Cancel|Yes|No|Apply)\b|\bQMessageBox\.(Yes|No|Ok|Cancel)\b"
+        r"|\bQgis\.(Warning|Info|Critical|Success)\b|\.exec_\(|\bQLineEdit\.Normal\b")
+
+    def test_no_unscoped_enums(self):
+        bad = []
+        for fn in sorted(glob.glob(os.path.join(PKG, "*.py"))):
+            with open(fn, encoding="utf-8") as fh:
+                for i, line in enumerate(fh, 1):
+                    if line.lstrip().startswith("#"):
+                        continue
+                    if self.UNSCOPED.search(line):
+                        bad.append("%s:%d %s" % (os.path.basename(fn), i, line.strip()))
+        self.assertEqual(bad, [], "unscoped Qt enums: %s" % bad)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

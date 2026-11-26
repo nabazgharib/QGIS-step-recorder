@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.3
+- Qt6 compatibility (plugin repository checker): every Qt enum is now scoped (`Qt.Orientation.Vertical`, `QDialogButtonBox.StandardButton.Ok`, ...) via `compat.py`; `exec_` replaced by a Qt5/Qt6-safe helper; `log.py` no longer uses `Qgis.Warning`.
+- Added a test that rejects unscoped enums.
+
 ## 1.1.2
 - Security scan (Bandit) fixes: every `except` block now logs instead of silently passing
   (new `log.py`; unexpected errors appear in *Log Messages > StepRecorder*).

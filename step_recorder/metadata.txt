@@ -5,7 +5,7 @@ qgisMaximumVersion=4.99
 supportsQt6=True
 description=Records your clicks, menu choices, dialog settings and map actions and turns them into step-by-step tutorials with screenshots.
 about=Step Recorder watches what you do in QGIS (menus, toolbar buttons, dialog fields, Processing algorithms, map canvas clicks, layer changes) and writes it down as numbered, human-readable instructions - like the "Steps Recorder" tool in Windows. Every step can get an annotated screenshot. Edit, re-order or delete steps, add your own notes, then export the tutorial to Markdown, HTML, PDF, plain text or JSON. Instruction language: English, Arabic (العربية) or Kurdish Sorani (کوردی سۆرانی).
-version=1.1.2
+version=1.1.3
 author=Nabaz
 email=nabazgharib@users.noreply.github.com
 homepage=https://github.com/nabazgharib/qgis-step-recorder
@@ -17,7 +17,8 @@ experimental=True
 deprecated=False
 hasProcessingProvider=no
 tags=tutorial,documentation,steps,recorder,screenshots,training,teaching,education
-changelog=1.1.2 - Security scan fixes: no errors are swallowed silently any more (they are logged to Log Messages > StepRecorder); renamed an i18n key that was flagged as a hardcoded password.
+changelog=1.1.3 - Qt6 compatibility: all Qt enums are now scoped (Qt6 style) and Qt5/Qt6 differences live in compat.py.
+ 1.1.2 - Security scan fixes: no errors are swallowed silently any more (they are logged to Log Messages > StepRecorder); renamed an i18n key that was flagged as a hardcoded password.
  1.1.1 - Fix menu capture on QGIS 4 (Qt6): QAction.associatedWidgets was removed.
  1.1.0 - Added Kurdish Sorani; menu clicks captured via menu signals; opening of menus and drop-down lists is recorded with a screenshot.
  1.0.0 - First release.

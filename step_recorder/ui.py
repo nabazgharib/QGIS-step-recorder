@@ -13,8 +13,9 @@ from qgis.PyQt.QtWidgets import (
 
 from . import exporter
 from .compat import (
-    ALIGN_CENTER, CHECKED, CHECKSTATE_ROLE, CONTEXT_CUSTOM, DD_INTERNAL_MOVE,
-    ITEM_USER_CHECKABLE, KEEP_ASPECT, SMOOTH_TRANSFORM, USER_ROLE, exec_dialog,
+    ALIGN_CENTER, CHECKED, CONTEXT_CUSTOM, DD_INTERNAL_MOVE, ITEM_USER_CHECKABLE,
+    LAYOUT_LTR, MSG_YES, ORIENT_VERTICAL, SMOOTH_TRANSFORM, STD_OK_CANCEL, UNCHECKED,
+    USER_ROLE, exec_dialog, exec_menu,
 )
 from .i18n import LANGUAGES, T, is_rtl
 from .model import ROLE_ACTION, ROLE_NOTE, ROLE_RESULT, Step
@@ -60,9 +61,7 @@ class OptionsDialog(QDialog):
                 w = QLineEdit(str(cur))
                 form.addRow(label, w)
             self.fields[key] = w
-        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-                              if hasattr(QDialogButtonBox, "StandardButton")
-                              else QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb = QDialogButtonBox(STD_OK_CANCEL)
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         lay.addWidget(bb)
@@ -108,9 +107,7 @@ class ExportDialog(QDialog):
         row.addWidget(self.path, 1)
         row.addWidget(browse)
         lay.addLayout(row)
-        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-                              if hasattr(QDialogButtonBox, "StandardButton")
-                              else QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb = QDialogButtonBox(STD_OK_CANCEL)
         bb.accepted.connect(self._ok)
         bb.rejected.connect(self.reject)
         lay.addWidget(bb)
@@ -190,7 +187,7 @@ class StepDock(QDockWidget):
         lay.addWidget(self.status)
 
         # --- step list + preview ---------------------------------------
-        split = QSplitter(Qt.Orientation.Vertical if hasattr(Qt, "Orientation") else Qt.Vertical)
+        split = QSplitter(ORIENT_VERTICAL)
         self.list = QListWidget()
         self.list.setDragDropMode(DD_INTERNAL_MOVE)
         self.list.setContextMenuPolicy(CONTEXT_CUSTOM)
@@ -243,8 +240,7 @@ class StepDock(QDockWidget):
             it = QListWidgetItem(self._label(s, n))
             it.setData(USER_ROLE, s.uid)
             it.setFlags(it.flags() | ITEM_USER_CHECKABLE)
-            it.setCheckState(CHECKED if s.enabled else Qt.CheckState.Unchecked
-                             if hasattr(Qt, "CheckState") else Qt.Unchecked)
+            it.setCheckState(CHECKED if s.enabled else UNCHECKED)
             it.setToolTip(strip_markup(s.text))
             self.list.addItem(it)
             if cur == s.uid:
@@ -281,8 +277,7 @@ class StepDock(QDockWidget):
         self.plugin.options.lang = self.lang.currentData()
         self.session.lang = self.plugin.options.lang
         self.plugin.options.save()
-        self.setLayoutDirection(Qt.LayoutDirection.LeftToRight if hasattr(Qt, "LayoutDirection")
-                                else Qt.LeftToRight)
+        self.setLayoutDirection(LAYOUT_LTR)
 
     def _add_note(self):
         text, ok = QInputDialog.getMultiLineText(self, "Add note", "Text to insert in the tutorial:")
@@ -326,9 +321,7 @@ class StepDock(QDockWidget):
             role.addItem(label, k)
         role.setCurrentIndex(max(0, role.findData(s.role)))
         v.addWidget(role)
-        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-                              if hasattr(QDialogButtonBox, "StandardButton")
-                              else QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb = QDialogButtonBox(STD_OK_CANCEL)
         bb.accepted.connect(dlg.accept)
         bb.rejected.connect(dlg.reject)
         v.addWidget(bb)
@@ -351,8 +344,7 @@ class StepDock(QDockWidget):
         a_img = m.addAction("Remove screenshot") if s.image else None
         a_cap = m.addAction("Replace with a new screenshot of QGIS")
         a_del = m.addAction("Delete step")
-        chosen = m.exec(self.list.viewport().mapToGlobal(pos)) if hasattr(m, "exec") \
-            else m.exec_(self.list.viewport().mapToGlobal(pos))
+        chosen = exec_menu(m, self.list.viewport().mapToGlobal(pos))
         i = self.session.steps.index(s)
         if chosen is a_edit:
             self._edit(it)
@@ -424,8 +416,7 @@ class StepDock(QDockWidget):
         if not self.session.steps:
             return
         r = QMessageBox.question(self, "Step Recorder", "Delete all recorded steps?")
-        yes = QMessageBox.StandardButton.Yes if hasattr(QMessageBox, "StandardButton") else QMessageBox.Yes
-        if r == yes:
+        if r == MSG_YES:
             self.session.clear()
 
     def _options(self):

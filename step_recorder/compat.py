@@ -3,7 +3,7 @@
 from qgis.PyQt.QtCore import Qt, QEvent, QPoint, QRect, QSize  # noqa: F401
 from qgis.PyQt.QtGui import QKeySequence  # noqa: F401
 from qgis.PyQt.QtWidgets import (  # noqa: F401
-    QToolButton, QFormLayout, QDialogButtonBox, QAbstractItemView, QDockWidget, QLineEdit,
+    QMessageBox, QToolButton, QFormLayout, QDialogButtonBox, QAbstractItemView, QDockWidget, QLineEdit,
 )
 
 try:                                    # Qt6
@@ -95,3 +95,17 @@ def associated_widgets(action):
         return [o for o in fn() if isinstance(o, QWidget)]
     except RuntimeError:
         return []
+
+# --- used by ui.py -----------------------------------------------------------
+STD_OK = enum(QDialogButtonBox, "StandardButton", "Ok")
+STD_CANCEL = enum(QDialogButtonBox, "StandardButton", "Cancel")
+STD_OK_CANCEL = STD_OK | STD_CANCEL
+MSG_YES = enum(QMessageBox, "StandardButton", "Yes")
+ORIENT_VERTICAL = enum(Qt, "Orientation", "Vertical")
+LAYOUT_LTR = enum(Qt, "LayoutDirection", "LeftToRight")
+
+
+def exec_menu(menu, global_pos):
+    """Show a QMenu at *global_pos* and return the chosen action (Qt5: exec_, Qt6: exec)."""
+    fn = getattr(menu, "exec", None) or getattr(menu, "exec_")
+    return fn(global_pos)

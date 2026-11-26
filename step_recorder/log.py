@@ -33,8 +33,6 @@ def warn(where):
         from qgis.core import Qgis, QgsMessageLog
     except ImportError:          # not running inside QGIS (unit tests)
         return
-    try:
-        level = Qgis.MessageLevel.Warning
-    except AttributeError:
-        level = Qgis.Warning
+    levels = getattr(Qgis, "MessageLevel", Qgis)     # QGIS >= 3.28 scopes the enum
+    level = getattr(levels, "Warning")
     QgsMessageLog.logMessage("%s\n%s" % (where, tb), "StepRecorder", level)
